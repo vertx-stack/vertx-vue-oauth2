@@ -2,7 +2,8 @@
   <nav class="navbar navbar-dark bg-header">
     <a class="navbar-brand" href="/">Your App</a>
     <span class="navbar-text">
-      {{ currentUser.email }}
+      {{ currentUser.ig }}
+      <img v-bind:src="currentUser.Paa" /> 
       <router-link to="/logout" class="btn btn-logout btn-sm">Logout</router-link>
     </span>
   </nav>
@@ -33,5 +34,10 @@ export default {
   background-color: darken(#837A75, 20%);
   border-color: darken(#837A75, 20%);
   color: #fff;
+}
+
+img {
+    border-radius: 50%;
+    height: 50px
 }
 </style>

@@ -4,7 +4,7 @@
 export default {
   name: 'Logout',
   created () {
-    delete localStorage.token
+    delete localStorage.currentUser
     this.$store.dispatch('logout')
     this.$router.push('/')
   }

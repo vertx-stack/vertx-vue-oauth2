@@ -6696,6 +6696,10 @@ vue-axios@^2.0.2:
   version "2.1.4"
   resolved "https://registry.yarnpkg.com/vue-axios/-/vue-axios-2.1.4.tgz#a9d298f7e876f9a87feb336b37adcbce34ff9f9f"
 
+vue-google-oauth@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/vue-google-oauth/-/vue-google-oauth-1.0.5.tgz#35e0861eb8abb342c08102c24658f1e05d78c386"
+
 vue-hot-reload-api@^2.2.0:
   version "2.3.1"
   resolved "https://registry.yarnpkg.com/vue-hot-reload-api/-/vue-hot-reload-api-2.3.1.tgz#b2d3d95402a811602380783ea4f566eb875569a2"

@@ -2,6 +2,8 @@ package com.ibm.example;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashSet;
+import java.util.Set;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -15,7 +17,6 @@ import io.vertx.ext.auth.oauth2.OAuth2ClientOptions;
 import io.vertx.ext.auth.oauth2.OAuth2FlowType;
 import io.vertx.ext.auth.oauth2.providers.OpenIDConnectAuth;
 import io.vertx.ext.web.Router;
-import io.vertx.ext.web.Session;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CorsHandler;
 import io.vertx.ext.web.handler.OAuth2AuthHandler;
@@ -124,20 +125,6 @@ public class MainVerticle extends AbstractVerticle {
 
 
 
-
-		//		// configure OAuth2 based on Keycloak
-		//		JsonObject keycloakJson = new JsonObject()
-		//				.put("realm", "master") // (1)
-		//				.put("realm-public-key", "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqZeGGDeEHmmUN4/UXh2gQD0yZEZirprsrdYK7GfcE1+QF9yfYfBrIv5cQUssFQKISVpbbLcoqYolsxcOvDyVFSQedHRsumOzqNZK38RHkidPMPrSNof5C3iMIHuXOCv/6exnLZvVoeYmkq42davYEz1tpSWzkZnlUMbRZFs1CfzLMM2rsAJWsO1/5zbDm0JhFl7EFUsTki72ihac1Q5zUUSFyf1jKUEkL7rrkYINjgAaQKktE8pnubc3Y44F5llY4YyU9/bqUWqMYDx868oiDcnoBpGGd4QrUMlbULZZLRqqUKK6iG1kHxDCJQ9gaCiJoELyAqXjnnO28OODQhxMHQIDAQAB") // (2)
-		//				.put("auth-server-url", "http://127.0.0.1:38080/auth")
-		//				.put("ssl-required", "external")
-		//				.put("resource", "vertx-account") // (3)
-		//				.put("credentials", new JsonObject().put("secret", "0c22e587-2ccb-4dd3-b017-5ff6a903891b")); // (4)
-		//		OAuth2Auth oauth2 = KeycloakAuth.create(vertx, OAuth2FlowType.PASSWORD, keycloakJson);
-
-
-
-
 		//		// handler to deliver the user info object, currently disabled
 		//		router.route("/app/userinfo").handler(context -> {
 		//			if (context.user() != null) {
@@ -152,24 +139,6 @@ public class MainVerticle extends AbstractVerticle {
 		//					);
 		//		});
 
-
-		//		googleOAuth2 = GoogleAuth.create(vertx, "1004190463315-f2jj8jpkpm411f0fr5i6ls0sfamlmj7g.apps.googleusercontent.com", "N4mpAKSg78WyK9Da7QWeraeM");
-		//		
-		//		OAuth2ClientOptions googleAuthOptions = new OAuth2ClientOptions()
-		//				.setClientID("1004190463315-f2jj8jpkpm411f0fr5i6ls0sfamlmj7g.apps.googleusercontent.com")
-		//				.setClientSecret("N4mpAKSg78WyK9Da7QWeraeM")
-		//				.setSite("https://accounts.google.com")
-		//				.setAuthorizationPath("/oauth/authorize")
-		//                .setTokenPath("/oauth/token");
-		//		
-		//		JsonObject googleAuthJson = new JsonObject()
-		//		.put("realm", "master") // (1)
-		//		.put("realm-public-key", "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqZeGGDeEHmmUN4/UXh2gQD0yZEZirprsrdYK7GfcE1+QF9yfYfBrIv5cQUssFQKISVpbbLcoqYolsxcOvDyVFSQedHRsumOzqNZK38RHkidPMPrSNof5C3iMIHuXOCv/6exnLZvVoeYmkq42davYEz1tpSWzkZnlUMbRZFs1CfzLMM2rsAJWsO1/5zbDm0JhFl7EFUsTki72ihac1Q5zUUSFyf1jKUEkL7rrkYINjgAaQKktE8pnubc3Y44F5llY4YyU9/bqUWqMYDx868oiDcnoBpGGd4QrUMlbULZZLRqqUKK6iG1kHxDCJQ9gaCiJoELyAqXjnnO28OODQhxMHQIDAQAB") // (2)
-		//		.put("auth-server-url", "http://127.0.0.1:38080/auth")
-		//		.put("ssl-required", "external")
-		//		.put("resource", "vertx-account") // (3)
-		//		.put("credentials", new JsonObject().put("secret", "0c22e587-2ccb-4dd3-b017-5ff6a903891b")); // (4)
-		//		
 		//		
 		//		googleOAuth2 = OAuth2Auth.create(vertx, OAuth2FlowType.AUTH_CODE, new OAuth2ClientOptions()
 		//				  .setClientID("YOUR_CLIENT_ID")
@@ -182,118 +151,96 @@ public class MainVerticle extends AbstractVerticle {
 		//		googleOAuth2 = GoogleAuth.create(vertx, OAuth2FlowType.AUTH_CODE, credentials);
 		//		
 
-		OpenIDConnectAuth.discover(
-				vertx,
-				new OAuth2ClientOptions()
-				.setClientID("1004190463315-f2jj8jpkpm411f0fr5i6ls0sfamlmj7g.apps.googleusercontent.com")
-				.setClientSecret("N4mpAKSg78WyK9Da7QWeraeM")
-				.setSite("https://accounts.google.com")
-				.setTokenPath("https://www.googleapis.com/oauth2/v3/token")
-				.setAuthorizationPath("/o/oauth2/auth"),
-				res -> {
-					if (res.succeeded()) {
-						// the setup call succeeded.
-						// at this moment your auth is ready to use and
-						// google signature keys are loaded so tokens can be decoded and verified.
-						System.out.println("Google OAUth2 setup successful !");
-						googleOAuth2Provider = res.result();
-
-						OAuth2FlowType flowType = googleOAuth2Provider.getFlowType();
-						System.out.println("Flow Type: "+flowType);
-
-						OAuth2AuthHandler oauth2 = OAuth2AuthHandler.create(googleOAuth2Provider, "http://localhost:8081/callback");
-
-						// these are the scopes
-						oauth2.addAuthority("profile");
-
-						// setup the callback handler for receiving the Google callback
+//		OpenIDConnectAuth.discover(
+//				vertx,
+//				new OAuth2ClientOptions()
+//				.setClientID("your client id")
+//				.setClientSecret("your client secret")
+//				.setSite("https://accounts.google.com")
+//				.setTokenPath("https://www.googleapis.com/oauth2/v3/token")
+//				.setAuthorizationPath("/o/oauth2/auth"),
+//				res -> {
+//					if (res.succeeded()) {
+//						// the setup call succeeded.
+//						// at this moment your auth is ready to use and
+//						// google signature keys are loaded so tokens can be decoded and verified.
+//						System.out.println("Google OAUth2 setup successful !");
+//						googleOAuth2Provider = res.result();
+//
+//						OAuth2FlowType flowType = googleOAuth2Provider.getFlowType();
+//						System.out.println("Flow Type: "+flowType);
+//
+//						OAuth2AuthHandler oauth2 = OAuth2AuthHandler.create(googleOAuth2Provider, "http://localhost:8081/callback");
+//						Set<String> authorities = new HashSet<String>();
+//						authorities.add("profile");
+//						oauth2.addAuthorities(authorities);
+//						
+//						
+//						router.route().handler(UserSessionHandler.create(googleOAuth2Provider));
+//
 //						oauth2.setupCallback(router.get("/callback"));
-
-						
-						router.route().handler(UserSessionHandler.create(googleOAuth2Provider));
-
-						oauth2.setupCallback(router.get("/callback"));
-//						// setup the callback handler for receiving the Google callback
-//						oauth2.setupCallback(router.get("/callback").produces("application/json").handler(rc -> {
-//							
-//							System.err.println("received body ::: '"+rc.getBodyAsString()+"'");
-////							System.err.println("received header ::: '"+rc.get()+"'");
-//							String state = rc.request().getParam("state");
-//							String code = rc.request().getParam("code");
-//							String scope = rc.request().getParam("scope");
-//							
-//							System.out.println("state: "+state);
-//							System.out.println("code: "+code);
-//							System.out.println("scope: "+scope);
-//							
-////							Session session = rc.session();
-////							session.get(key)
-//							
-//							rc.response()
-//								.putHeader("state", state)
-//								.putHeader("code", code)
-//								.putHeader("scope", scope);
-//							rc.put("code", code).next();
-//							
-//						}));
-
-						
-						// protect everything under /protected
-						router.route("/protected/*").handler(oauth2);
-						// mount some handler under the protected zone
-						router.route("/protected/somepage").handler(rc -> rc.response().end("Welcome to the protected resource!"));
-
-						router.get("/protected/getUserInfo").produces("application/json").handler(rc -> {
-							String code = rc.get("code");
-							JsonObject user = new JsonObject()
-									.put("email", "N/A")
-									.put("access_token", code);
-							rc.response().end(user.encodePrettily());
-						});
-						
-						router.get("/protected/login").handler(rc -> {
-							String targetPath = "http://localhost:8081/home";
-							
-							System.out.println("::: wants me to redirect to : "+targetPath);
-							rc.response().putHeader("location", targetPath).setStatusCode(302).end();
-						});
-						
-						// welcome page
-						router.get("/").handler(ctx -> ctx.response().putHeader("content-type", "text/html").end("Hello<br><a href=\"/protected/somepage\">Protected by Google</a>"));
-
-//						router.route("/login").handler(bodyHandler);
-						
-					} else {
-						// the setup failed.
-						System.err.println("Google OAUth2 setup failed !");
-					}
-				});
+//						
+////						// setup the callback handler for receiving the Google callback
+////						oauth2.setupCallback(router.get("/callback").produces("application/json").handler(rc -> {
+////							
+////							System.err.println("received body ::: '"+rc.getBodyAsString()+"'");
+//////							System.err.println("received header ::: '"+rc.get()+"'");
+////							String state = rc.request().getParam("state");
+////							String code = rc.request().getParam("code");
+////							String scope = rc.request().getParam("scope");
+////							
+////							System.out.println("state: "+state);
+////							System.out.println("code: "+code);
+////							System.out.println("scope: "+scope);
+////							
+//////							Session session = rc.session();
+//////							session.get(key)
+////							
+////							rc.response()
+////								.putHeader("state", state)
+////								.putHeader("code", code)
+////								.putHeader("scope", scope);
+////							rc.put("code", code).next();
+////							
+////						}));
+//
+//						
+//						// protect everything under /protected
+//						router.route("/protected/*").handler(oauth2);
+//						// mount some handler under the protected zone
+//						router.route("/protected/somepage").handler(rc -> rc.response().end("Welcome to the protected resource!"));
+//
+//						router.get("/protected/getUserInfo").produces("application/json").handler(rc -> {
+//							String code = rc.get("code");
+//							JsonObject user = new JsonObject()
+//									.put("email", "N/A")
+//									.put("access_token", code);
+//							rc.response().end(user.encodePrettily());
+//						});
+//						
+//						router.get("/login").handler(oauth2);
+//						
+//						// welcome page
+//						router.get("/").handler(ctx -> ctx.response().putHeader("content-type", "text/html").end("Hello<br><a href=\"/protected/somepage\">Protected by Google</a>"));
+//
+////						router.route("/login").handler(bodyHandler);
+//						
+//					} else {
+//						// the setup failed.
+//						System.err.println("Google OAUth2 setup failed !");
+//					}
+//				});
 
 		
-//		router.route("/loginprovide/google").handler(loginR::LoginWithGoogle);
 
+				// Google auth handler, we can drive the the google auth from the backend here and request the access_token and id_token based on the authorization code
+				// however in this example we handle this in the frontend
+				router.route("/auth/google").produces("application/json").handler(rc -> {
+					System.err.println("received body ::: '"+rc.getBodyAsString()+"'");
+					JsonObject userJson = rc.getBodyAsJson();
+					System.err.println(userJson.encodePrettily());
 
-//
-//				// Login handler
-//				router.post("/login").produces("application/json").handler(rc -> {
-//					System.err.println("received body ::: '"+rc.getBodyAsString()+"'");
-//					JsonObject userJson = rc.getBodyAsJson();
-//
-//					if(googleOAuth2 != null) {
-//						googleOAuth2.
-//						googleOAuth2.authenticate(userJson, res -> {
-//							if (res.failed()) {
-//								System.err.println("Access token error: {} " + res.cause().getMessage());
-//								rc.response().setStatusCode(HttpResponseStatus.UNAUTHORIZED.code()).end();
-//							} else {
-//								User user = res.result();
-//								System.out.println("Success: we have found user: "+user.principal().encodePrettily());
-//								rc.response().end(user.principal().encodePrettily());
-//							}
-//						});
-//					}
-//					else rc.response().setStatusCode(HttpResponseStatus.FORBIDDEN.code()).end();
-//				});
+				});
 
 		// configure EventBus based on the SockJSBridge
 		router.route("/eventbus/*").handler(new SockJSBridge(vertx));

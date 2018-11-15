@@ -2,61 +2,80 @@
   <div class="login-overlay">
     <div class="login-wrapper border border-light">
       <form class="form-signin">
+        <div v-if=response class="text-red"><p>{{response}}</p></div>
         <!-- <a class="btn btn-lg btn-primary btn-block" v-on:click="login">Sign in with Google</a> -->
-        <a class="btn btn-lg btn-primary btn-block" href="http://localhost:8080/protected/somepage">Sign in with Google</a>
+        <a class="btn btn-lg btn-primary btn-block" v-on:click="signIn">Sign in with Google</a>
       </form>
     </div>
   </div>
 </template>
 
 <script>
-
+import Vue from 'vue'
 export default {
   name: 'Login',
-  data () {
+  data: function (router) {
     return {
-      email: '',
-      password: '',
-      error: false
+      section: 'Login',
+      loading: '',
+      response: ''
     }
   },
-  created () {
-    this.checkCurrentLogin()
-  },
-  updated () {
-    this.checkCurrentLogin()
-  },
   methods: {
-    checkCurrentLogin () {
-      if (this.currentUser) {
-        this.$router.replace(this.$route.query.redirect || '/authors')
-      }
+    signIn: function () {
+      let ctx = this;
+
+      // backend-auth: use this code if you'd wanna handle the goole auth on your backend
+      //Vue.googleAuth().signIn(this.onSignInSuccess, this.onSignInError)
+
+      // frontend-auth: we use this in the example to retrieve the full level of user auth on the frontend
+      Vue.googleAuth().directAccess()
+      Vue.googleAuth().signIn(function (googleUser) {
+        let user = JSON.parse(JSON.stringify(googleUser));
+        localStorage.currentUser = JSON.stringify(user.w3);
+
+        ctx.$store.dispatch('login')
+        // console.log('redirect to ', ctx.$route.query.redirect)
+        ctx.$router.replace(ctx.$route.query.redirect || '/authors')
+      }, function (error) {
+        console.log(error)
+      })
     },
-    login () {
-      // http://localhost:8080/protected/login"
-      // getUserInfo
-      // this.$http.get('/protected/getUserInfo')
-      //   .then(request => this.loginSuccessful(request))
-      //   .catch(() => {
-      //     console.log("now have to redirect to login page !")
-      //     window.location.href = 'http://localhost:8080/protected/login?state=bla';
-      //   })
+    onSignInSuccess: function (authorizationCode) {
+      // backend-auth: use this code if you'd wanna handle the goole auth on your backend
+      this.toggleLoading()
+      this.resetResponse()
+      this.$http.post('http://localhost:8080/auth/google', { code: authorizationCode, redirect_uri: 'postmessage' }).then(function (response) {
+        if (response.body) {
+          var data = response.body
+          // Save to vuex
+          var token = 'Bearer ' + data.token
+          this.$store.commit('SET_USER', data.user_data)
+          this.$store.commit('SET_TOKEN', token)
+          // Save to local storage as well
+          // ( or you can install the vuex-persistedstate plugin so that you won't have to do this step, only store to Vuex is sufficient )
+          if (window.localStorage) {
+            window.localStorage.setItem('user', JSON.stringify(data.user_data))
+            window.localStorage.setItem('token', token)
+          }
+          // redirect to the dashboard
+          this.$router.push({ name: 'home' })
+        }
+      }, function (response) {
+        var data = response.body
+        this.response = data.error
+        console.log('BACKEND SERVER - SIGN-IN ERROR', data)
+      })
     },
-    loginSuccessful (req) {
-      console.log(req)
-      if (!req.data.access_token) {
-        this.loginFailed()
-        return
-      }
-      this.error = false
-      localStorage.token = req.data.access_token
-      this.$store.dispatch('login')
-      this.$router.replace(this.$route.query.redirect || '/authors')
+    onSignInError: function (error) {
+      this.response = 'Failed to sign-in'
+      console.log('GOOGLE SERVER - SIGN-IN ERROR', error)
     },
-    loginFailed () {
-      this.error = 'Login failed!'
-      this.$store.dispatch('logout')
-      delete localStorage.token
+    toggleLoading: function () {
+      this.loading = (this.loading === '') ? 'loading' : ''
+    },
+    resetResponse: function () {
+      this.response = ''
     }
   }
 }

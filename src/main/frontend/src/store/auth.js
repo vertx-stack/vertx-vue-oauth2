@@ -1,15 +1,14 @@
 /* global localStorage */
 
-import User from '@/models/User'
 import * as MutationTypes from './mutation-types'
 
 const state = {
-  user: User.from(localStorage.token)
+  user: localStorage.currentUser
 }
 
 const mutations = {
   [MutationTypes.LOGIN] (state) {
-    state.user = User.from(localStorage.token)
+    state.user = JSON.parse(localStorage.currentUser)
   },
   [MutationTypes.LOGOUT] (state) {
     state.user = null

@@ -31,15 +31,8 @@ export default {
   },
   methods: {
     checkCurrentLogin () {
-      if(this.$route.path === '/callback') {
-        console.log(this.$route)
-        localStorage.token = this.$route.query.code
-        console.log(this.currentUser)
-      }
-
-      //if(this.$route.path !== '/'
-      else if (!this.currentUser && this.$route.path !== '/') {
-       this.$router.push('/?redirect=' + this.$route.path)
+      if (!this.currentUser && this.$route.path !== '/') {
+        this.$router.push('/?redirect=' + this.$route.path)
       }
     }
   },
