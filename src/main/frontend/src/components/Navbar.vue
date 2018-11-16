@@ -2,8 +2,8 @@
   <nav class="navbar navbar-dark bg-header">
     <a class="navbar-brand" href="/">Your App</a>
     <span class="navbar-text">
-      {{ currentUser.ig }}
-      <img v-bind:src="currentUser.Paa" /> 
+      {{ currentUser.fullname }}
+      <img v-bind:src="currentUser.image" /> 
       <router-link to="/logout" class="btn btn-logout btn-sm">Logout</router-link>
     </span>
   </nav>

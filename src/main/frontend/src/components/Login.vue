@@ -24,42 +24,37 @@ export default {
   methods: {
     signIn: function () {
       let ctx = this;
+      let useBackendScenario = true;
 
-      // backend-auth: use this code if you'd wanna handle the goole auth on your backend
-      //Vue.googleAuth().signIn(this.onSignInSuccess, this.onSignInError)
-
-      // frontend-auth: we use this in the example to retrieve the full level of user auth on the frontend
-      Vue.googleAuth().directAccess()
-      Vue.googleAuth().signIn(function (googleUser) {
-        let user = JSON.parse(JSON.stringify(googleUser));
-        localStorage.currentUser = JSON.stringify(user.w3);
-
-        ctx.$store.dispatch('login')
-        // console.log('redirect to ', ctx.$route.query.redirect)
-        ctx.$router.replace(ctx.$route.query.redirect || '/authors')
-      }, function (error) {
-        console.log(error)
-      })
+      // Scenario-1 (backend auth): use this code if you'd wanna handle Google OAuth on your vertx backend
+      if(useBackendScenario == true) {
+        Vue.googleAuth().signIn(this.onSignInSuccess, this.onSignInError)
+      }
+      // Scenario-2 (frontend auth): use this code if you'd wanna handle Google OAuth o VueJS
+      else {
+        Vue.googleAuth().directAccess()
+        Vue.googleAuth().signIn(function (googleUser) {
+          let user = JSON.parse(JSON.stringify(googleUser));
+          localStorage.currentUser = JSON.stringify(user.w3);
+          ctx.$store.dispatch('login')
+          ctx.$router.replace(ctx.$route.query.redirect || '/authors')
+        }, function (error) {
+          console.log(error)
+        })
+      }
     },
     onSignInSuccess: function (authorizationCode) {
+      let ctx = this;
+
       // backend-auth: use this code if you'd wanna handle the goole auth on your backend
       this.toggleLoading()
       this.resetResponse()
       this.$http.post('http://localhost:8080/auth/google', { code: authorizationCode, redirect_uri: 'postmessage' }).then(function (response) {
-        if (response.body) {
-          var data = response.body
-          // Save to vuex
-          var token = 'Bearer ' + data.token
-          this.$store.commit('SET_USER', data.user_data)
-          this.$store.commit('SET_TOKEN', token)
-          // Save to local storage as well
-          // ( or you can install the vuex-persistedstate plugin so that you won't have to do this step, only store to Vuex is sufficient )
-          if (window.localStorage) {
-            window.localStorage.setItem('user', JSON.stringify(data.user_data))
-            window.localStorage.setItem('token', token)
-          }
-          // redirect to the dashboard
-          this.$router.push({ name: 'home' })
+        if (response.data) {
+          var user = JSON.parse(JSON.stringify(response.data))
+          localStorage.currentUser = JSON.stringify(user);
+          ctx.$store.dispatch('login')
+          ctx.$router.replace(ctx.$route.query.redirect || '/authors')
         }
       }, function (response) {
         var data = response.body

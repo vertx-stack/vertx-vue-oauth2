@@ -5,9 +5,11 @@ import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
 
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -21,7 +23,6 @@ import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CorsHandler;
 import io.vertx.ext.web.handler.OAuth2AuthHandler;
 import io.vertx.ext.web.handler.StaticHandler;
-import io.vertx.ext.web.handler.UserSessionHandler;
 
 public class MainVerticle extends AbstractVerticle {
 
@@ -43,6 +44,7 @@ public class MainVerticle extends AbstractVerticle {
 			.add(new JsonObject().put("content", "one more"));
 
 	private OAuth2Auth googleOAuth2Provider = null;
+	private OAuth2AuthHandler googleOAuth2Handler = null;
 
 	@Override
 	public void start(Future<Void> startFuture) {
@@ -122,125 +124,112 @@ public class MainVerticle extends AbstractVerticle {
 			else context.next();
 		});
 
+//		// handler to deliver the user info object, currently disabled
+//		router.route("/app/userinfo").handler(context -> {
+//			if (context.user() != null) {
+//				JsonObject userDetails = context.user().principal();
+//				userDetails.remove("password");
+//				userDetails.put("jsessionid", context.session().id());
+//				context.request().response().putHeader("Content-Type", "application/json");
+//				context.request().response().end(userDetails.encodePrettily());
+//			}
+//			else context.request().response().end(
+//					new JsonObject().put("error", "401").put("message", "user is not authenticated").encodePrettily()
+//					);
+//		});
 
+	
+		OpenIDConnectAuth.discover(
+				vertx,
+				new OAuth2ClientOptions()
+				.setClientID("<your google auth client id>")
+				.setClientSecret("<your google auth client secret>")
+				.setSite("https://accounts.google.com")
+				.setTokenPath("https://www.googleapis.com/oauth2/v3/token")
+				.setAuthorizationPath("/o/oauth2/auth"),
+				res -> {
+					if (res.succeeded()) {
+						// the setup call succeeded. At this moment your auth is ready to use and google signature keys
+						// are loaded so tokens can be decoded and verified.
+						
+						System.out.println("Google OAUth2 setup successful !");
+						googleOAuth2Provider = res.result();
 
+						OAuth2FlowType flowType = googleOAuth2Provider.getFlowType();
+						System.out.println("Flow Type: "+flowType);
 
-		//		// handler to deliver the user info object, currently disabled
-		//		router.route("/app/userinfo").handler(context -> {
-		//			if (context.user() != null) {
-		//				JsonObject userDetails = context.user().principal();
-		//				userDetails.remove("password");
-		//				userDetails.put("jsessionid", context.session().id());
-		//				context.request().response().putHeader("Content-Type", "application/json");
-		//				context.request().response().end(userDetails.encodePrettily());
-		//			}
-		//			else context.request().response().end(
-		//					new JsonObject().put("error", "401").put("message", "user is not authenticated").encodePrettily()
-		//					);
-		//		});
+						googleOAuth2Handler = OAuth2AuthHandler.create(googleOAuth2Provider, "http://localhost:8081/callback");
+						Set<String> authorities = new HashSet<String>();
+						authorities.add("profile");
+						googleOAuth2Handler.addAuthorities(authorities);
+						googleOAuth2Handler.setupCallback(router.get("/callback"));
 
-		//		
-		//		googleOAuth2 = OAuth2Auth.create(vertx, OAuth2FlowType.AUTH_CODE, new OAuth2ClientOptions()
-		//				  .setClientID("YOUR_CLIENT_ID")
-		//				  .setClientSecret("YOUR_CLIENT_SECRET")
-		//				  .setSite("https://accounts.google.com")
-		//				  .setTokenPath("/oauth/access_token")
-		//				  .setAuthorizationPath("/oauth/authorize")
-		//				)
-		//				https://accounts.google.com
-		//		googleOAuth2 = GoogleAuth.create(vertx, OAuth2FlowType.AUTH_CODE, credentials);
-		//		
-
-//		OpenIDConnectAuth.discover(
-//				vertx,
-//				new OAuth2ClientOptions()
-//				.setClientID("your client id")
-//				.setClientSecret("your client secret")
-//				.setSite("https://accounts.google.com")
-//				.setTokenPath("https://www.googleapis.com/oauth2/v3/token")
-//				.setAuthorizationPath("/o/oauth2/auth"),
-//				res -> {
-//					if (res.succeeded()) {
-//						// the setup call succeeded.
-//						// at this moment your auth is ready to use and
-//						// google signature keys are loaded so tokens can be decoded and verified.
-//						System.out.println("Google OAUth2 setup successful !");
-//						googleOAuth2Provider = res.result();
-//
-//						OAuth2FlowType flowType = googleOAuth2Provider.getFlowType();
-//						System.out.println("Flow Type: "+flowType);
-//
-//						OAuth2AuthHandler oauth2 = OAuth2AuthHandler.create(googleOAuth2Provider, "http://localhost:8081/callback");
-//						Set<String> authorities = new HashSet<String>();
-//						authorities.add("profile");
-//						oauth2.addAuthorities(authorities);
-//						
-//						
-//						router.route().handler(UserSessionHandler.create(googleOAuth2Provider));
-//
-//						oauth2.setupCallback(router.get("/callback"));
-//						
-////						// setup the callback handler for receiving the Google callback
-////						oauth2.setupCallback(router.get("/callback").produces("application/json").handler(rc -> {
-////							
-////							System.err.println("received body ::: '"+rc.getBodyAsString()+"'");
-//////							System.err.println("received header ::: '"+rc.get()+"'");
-////							String state = rc.request().getParam("state");
-////							String code = rc.request().getParam("code");
-////							String scope = rc.request().getParam("scope");
-////							
-////							System.out.println("state: "+state);
-////							System.out.println("code: "+code);
-////							System.out.println("scope: "+scope);
-////							
-//////							Session session = rc.session();
-//////							session.get(key)
-////							
-////							rc.response()
-////								.putHeader("state", state)
-////								.putHeader("code", code)
-////								.putHeader("scope", scope);
-////							rc.put("code", code).next();
-////							
-////						}));
-//
-//						
-//						// protect everything under /protected
-//						router.route("/protected/*").handler(oauth2);
-//						// mount some handler under the protected zone
-//						router.route("/protected/somepage").handler(rc -> rc.response().end("Welcome to the protected resource!"));
-//
-//						router.get("/protected/getUserInfo").produces("application/json").handler(rc -> {
-//							String code = rc.get("code");
-//							JsonObject user = new JsonObject()
-//									.put("email", "N/A")
-//									.put("access_token", code);
-//							rc.response().end(user.encodePrettily());
-//						});
-//						
-//						router.get("/login").handler(oauth2);
-//						
-//						// welcome page
+						
+//						// setup the callback handler for receiving the Google callback
+//						oauth2.setupCallback(router.get("/callback").produces("application/json").handler(rc -> {
+//							
+//							System.err.println("received body ::: '"+rc.getBodyAsString()+"'");
+////							System.err.println("received header ::: '"+rc.get()+"'");
+//							String state = rc.request().getParam("state");
+//							String code = rc.request().getParam("code");
+//							String scope = rc.request().getParam("scope");
+//							
+////							Session session = rc.session();
+////							session.get(key)
+//							
+//							rc.response()
+//								.putHeader("state", state)
+//								.putHeader("code", code)
+//								.putHeader("scope", scope);
+//							rc.put("code", code).next();
+//							
+//						}));
+						
+						// welcome page
 //						router.get("/").handler(ctx -> ctx.response().putHeader("content-type", "text/html").end("Hello<br><a href=\"/protected/somepage\">Protected by Google</a>"));
-//
-////						router.route("/login").handler(bodyHandler);
-//						
-//					} else {
-//						// the setup failed.
-//						System.err.println("Google OAUth2 setup failed !");
-//					}
-//				});
+						
+					} else {
+						// the setup failed.
+						System.err.println("Google OAUth2 setup failed !");
+					}
+				});
 
 		
 
-				// Google auth handler, we can drive the the google auth from the backend here and request the access_token and id_token based on the authorization code
-				// however in this example we handle this in the frontend
-				router.route("/auth/google").produces("application/json").handler(rc -> {
-					System.err.println("received body ::: '"+rc.getBodyAsString()+"'");
-					JsonObject userJson = rc.getBodyAsJson();
-					System.err.println(userJson.encodePrettily());
+		// Google auth handler, we can drive the the google auth from the backend here and request the access_token 
+		// and id_token based on the authorization code however in this example we handle this in the frontend
+		router.route("/auth/google").produces("application/json").handler(context -> {
+			System.err.println("received body ::: '"+context.getBodyAsString()+"'");
+			JsonObject authRequestJson = context.getBodyAsJson();
 
-				});
+			// use the google oauth provider to execute authentication based on the "authorization code"
+			googleOAuth2Provider.authenticate(authRequestJson, ctx -> {
+				if(ctx.succeeded()) {
+					// we've now successfull retrieved the access_token, refresh_token, id_token and the scope
+					JsonObject token = ctx.result().principal();
+					
+					// now use the access_token to retrieve the user profile, we utilize vertx HttpClient to do this REST call
+					HttpClient httpClient = vertx.createHttpClient();
+					final String url = "https://www.googleapis.com/plus/v1/people/me?access_token="+token.getString("access_token");
+					httpClient.getAbs(url, response -> {
+						if (response.statusCode() != 200) {
+							// anything else than HTTP 200 comes back, reply UNAUTHORIZED to the frontend
+							context.response().setStatusCode(HttpResponseStatus.UNAUTHORIZED.code()).end();
+						} else {
+							response.bodyHandler(b -> {
+								// we've received the google user in a JSON object and we're going to reply this to the frontend
+								JsonObject googleUser = b.toJsonObject();
+								context.request().response().end( googleUser.encodePrettily() );
+							});
+						}
+					}).end();
+				}
+				else {
+					// authentication failed, reply UNAUTHORIZED to the frontend
+					context.response().setStatusCode(HttpResponseStatus.UNAUTHORIZED.code()).end();
+				}
+			});
+		});
 
 		// configure EventBus based on the SockJSBridge
 		router.route("/eventbus/*").handler(new SockJSBridge(vertx));

@@ -8,7 +8,7 @@ import store from './store'
 import 'font-awesome-webpack'
 import GoogleAuth from 'vue-google-oauth'
 
-Vue.use(GoogleAuth, { client_id: 'your client id' })
+Vue.use(GoogleAuth, { client_id: '1004190463315-nba24dnbjdppk9p2okf1gtbqm924e7mp.apps.googleusercontent.com' })
 Vue.googleAuth().load()
 
 Vue.config.productionTip = false
